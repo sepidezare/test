@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         styles: 1,
         materials: 1,
         sizes: 1,
-        layout: 1, // ✅ Include layout field
+        layout: 1, 
         createdAt: 1,
         updatedAt: 1
       })

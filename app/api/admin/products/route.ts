@@ -1,4 +1,7 @@
 //api/admin/products/route.ts
+export const revalidate = 0;
+
+
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongoDb';
 import { writeFile, mkdir } from 'fs/promises';
@@ -23,7 +26,7 @@ const UPLOAD_CONFIG = {
   },
 };
 
-// app/api/admin/products/route.ts - Update your GET method
+
 export async function GET(request: Request) {
   try {
     const client = await clientPromise;

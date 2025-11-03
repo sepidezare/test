@@ -1,10 +1,10 @@
 //admin/products/page.tsx
-import { Product } from "@/types/product";
+export const dynamic = "force-dynamic";
+
 import ProductsTable from "@/app/components/admin/ProductsTable";
 import clientPromise from "@/lib/mongoDb";
 import Link from "next/link";
 
-// app/admin/products/page.tsx
 async function getProducts() {
   try {
     const client = await clientPromise;
