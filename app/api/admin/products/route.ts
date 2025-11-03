@@ -1,9 +1,9 @@
 //api/admin/products/route.ts
 import { NextResponse } from 'next/server';
-import clientPromise from '../../../../lib/mongoDb';
+import clientPromise from '@/lib/mongoDb';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
-import { Product } from '../../../../types/product';
+import { Product } from '@/types/product';
 import { put } from '@vercel/blob';
 
 const UPLOAD_CONFIG = {
@@ -23,15 +23,13 @@ const UPLOAD_CONFIG = {
   },
 };
 
-// api/admin/products/route.ts
+// app/api/admin/products/route.ts - Update your GET method
 export async function GET(request: Request) {
   try {
     const client = await clientPromise;
     const db = client.db();
-    
-    // Log database connection details
-    console.log('Connected to database:', db.databaseName);
-    console.log('MongoDB URI:', process.env.MONGODB_URI?.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Hide credentials
+
+    console.log('🔄 GET /api/admin/products - Fetching products');
     
     const products = await db
       .collection('products')
@@ -39,23 +37,56 @@ export async function GET(request: Request) {
       .sort({ createdAt: -1 })
       .toArray();
 
-    console.log(`Found ${products.length} products in database: ${db.databaseName}`);
+    console.log('🔄 GET /api/admin/products - Raw products from DB:', products.length);
+    
+    // Debug: Log each product's critical fields
+    products.forEach((product, index) => {
+      console.log(`🔄 Product ${index}:`, {
+        _id: product._id?.toString(),
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        hasImage: !!product.image,
+        hasId: !!product._id,
+        hasName: !!product.name,
+        hasPrice: product.price !== undefined
+      });
+    });
 
-    const serializedProducts = products.map(product => ({
-      _id: product._id.toString(),
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      // Add database info for debugging
-      _debug: {
-        database: db.databaseName,
-        collection: 'products'
+    const serializedProducts = products.map(product => {
+      // Check for missing required fields
+      if (!product._id || !product.name || product.price === undefined) {
+        console.warn('❌ Invalid product data:', {
+          _id: product._id,
+          name: product.name,
+          price: product.price
+        });
       }
-    }));
 
+      return {
+        _id: product._id?.toString() || `invalid-${Date.now()}`,
+        name: product.name || 'Unnamed Product',
+        slug: product.slug || '',
+        description: product.description || '',
+        price: product.price ?? 0,
+        discountPrice: product.discountPrice || 0,
+        image: product.image || '',
+        categories: product.categories || [],
+        brand: product.brand || '',
+        colors: product.colors || [],
+        styles: product.styles || [],
+        materials: product.materials || [],
+        sizes: product.sizes || [],
+        createdAt: product.createdAt?.toISOString() || new Date().toISOString(),
+        updatedAt: product.updatedAt?.toISOString() || new Date().toISOString(),
+      };
+    });
+
+    console.log('🔄 GET /api/admin/products - Serialized products:', serializedProducts.length);
+    
     return NextResponse.json(serializedProducts);
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('❌ Error fetching products:', error);
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
