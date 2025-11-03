@@ -1,6 +1,7 @@
-import { Product } from "../../../types/product";
+//admin/products/page.tsx
+import { Product } from "@/types/product";
 import ProductsTable from "@/app/components/admin/ProductsTable";
-import clientPromise from "../../../lib/mongoDb";
+import clientPromise from "@/lib/mongoDb";
 import Link from "next/link";
 
 async function getProducts(): Promise<Product[]> {

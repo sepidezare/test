@@ -1,3 +1,4 @@
+//api/admin/products/route.ts
 import { NextResponse } from 'next/server';
 import clientPromise from '../../../../lib/mongoDb';
 import { writeFile, mkdir } from 'fs/promises';
@@ -22,33 +23,34 @@ const UPLOAD_CONFIG = {
   },
 };
 
+// api/admin/products/route.ts
 export async function GET(request: Request) {
   try {
     const client = await clientPromise;
     const db = client.db();
-
+    
+    // Log database connection details
+    console.log('Connected to database:', db.databaseName);
+    console.log('MongoDB URI:', process.env.MONGODB_URI?.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Hide credentials
+    
     const products = await db
       .collection('products')
       .find({})
       .sort({ createdAt: -1 })
       .toArray();
 
+    console.log(`Found ${products.length} products in database: ${db.databaseName}`);
+
     const serializedProducts = products.map(product => ({
       _id: product._id.toString(),
       name: product.name,
-      slug: product.slug || '',
-      description: product.description,
       price: product.price,
-      discountPrice: product.discountPrice || 0,
       image: product.image,
-      categories: product.categories || [],
-      brand: product.brand || '',
-      colors: product.colors || [],
-      styles: product.styles || [],
-      materials: product.materials || [],
-      sizes: product.sizes || [],
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
+      // Add database info for debugging
+      _debug: {
+        database: db.databaseName,
+        collection: 'products'
+      }
     }));
 
     return NextResponse.json(serializedProducts);
