@@ -68,22 +68,6 @@ export default async function ProductsPage() {
           </Link>
         </div>
 
-        {/* Simple debug display */}
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
-          <h3 className="font-bold text-blue-800">Debug Info:</h3>
-          <p>
-            Products count: <strong>{products.length}</strong>
-          </p>
-          <div className="mt-2">
-            <p className="font-semibold">First 5 products:</p>
-            {products.slice(0, 5).map((product) => (
-              <div key={product._id} className="text-sm">
-                - {product.name} (${product.price})
-              </div>
-            ))}
-          </div>
-        </div>
-
         <ProductsTable products={products} />
       </div>
     </div>
