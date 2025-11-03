@@ -1,8 +1,7 @@
-//src/app/admin/products/edit/[id]/page.tsx
 import { notFound } from "next/navigation";
-import { Product } from "../../../../../types/product";
+import { Product } from "@/types/product";
 import ProductForm from "@/app/components/admin/ProductForm";
-import clientPromise from "../../../../../lib/mongoDb";
+import clientPromise from "@/lib/mongoDb";
 import { ObjectId } from "mongodb";
 
 async function getProduct(id: string): Promise<Product | null> {
@@ -20,7 +19,6 @@ async function getProduct(id: string): Promise<Product | null> {
       return null;
     }
 
-    // Ensure arrays are properly handled and default to empty arrays if undefined
     const categories = Array.isArray(product.categories)
       ? product.categories
       : [];
@@ -75,7 +73,6 @@ interface EditProductPageProps {
 export default async function EditProductPage({
   params,
 }: EditProductPageProps) {
-  // Await the params
   const { id } = await params;
 
   const product = await getProduct(id);
@@ -83,8 +80,6 @@ export default async function EditProductPage({
   if (!product) {
     notFound();
   }
-
-  // Debug log to check what data is being passed to the form
   console.log("Product data passed to form:", {
     id: product._id,
     name: product.name,

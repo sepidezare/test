@@ -1,6 +1,4 @@
 import clientPromise from "@/lib/mongoDb";
-import { resolveObjectURL } from "buffer";
-import { url } from "inspector";
 import { NextResponse } from "next/server";
 
 export async function GET(request:Request) {

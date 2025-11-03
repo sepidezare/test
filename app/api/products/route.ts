@@ -1,4 +1,3 @@
-// app/api/products/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongoDb';
 
@@ -28,7 +27,6 @@ export async function GET(request: NextRequest) {
       })
       .toArray();
 
-    // Serialize products with layout
     const serializedProducts = products.map(product => ({
       _id: product._id?.toString(),
       name: product.name,
@@ -43,7 +41,7 @@ export async function GET(request: NextRequest) {
       styles: product.styles || [],
       materials: product.materials || [],
       sizes: product.sizes || [],
-      layout: product.layout || { // ✅ Include layout with default values
+      layout: product.layout || { 
         imageSize: "medium",
         textAlignment: "left", 
         showDescription: true,

@@ -1,4 +1,3 @@
-//admin/products/page.tsx
 export const dynamic = "force-dynamic";
 
 import ProductsTable from "@/app/components/admin/ProductsTable";
@@ -9,21 +8,12 @@ async function getProducts() {
   try {
     const client = await clientPromise;
     const db = client.db();
-
-    console.log(
-      "📊 Admin Page: Fetching products from database:",
-      db.databaseName
-    );
-
     const products = await db
       .collection("products")
       .find({})
       .sort({ createdAt: -1 })
       .toArray();
 
-    console.log("📊 Admin Page: Raw products count from DB:", products.length);
-
-    // Check for data issues
     const validProducts = products.filter(
       (p) => p._id && p.name && p.price !== undefined
     );
@@ -31,14 +21,6 @@ async function getProducts() {
       (p) => !p._id || !p.name || p.price === undefined
     );
 
-    if (invalidProducts.length > 0) {
-      console.warn(
-        "📊 Admin Page: Invalid products found:",
-        invalidProducts.length
-      );
-    }
-
-    // Default layout object that matches your Product type
     const defaultLayout = {
       imageSize: "medium" as const,
       textAlignment: "left" as const,
@@ -48,7 +30,6 @@ async function getProducts() {
       borderStyle: "outlined" as const,
     };
 
-    // Helper function to safely convert to ISO string
     const toISOString = (date: any): string => {
       if (!date) return new Date().toISOString();
       if (date instanceof Date) return date.toISOString();
@@ -80,9 +61,6 @@ async function getProducts() {
         layout: product.layout || defaultLayout,
       };
     });
-
-    console.log("📊 Admin Page: Mapped valid products:", mappedProducts.length);
-
     return {
       products: mappedProducts,
       stats: {
@@ -92,7 +70,6 @@ async function getProducts() {
       },
     };
   } catch (error) {
-    console.error("❌ Admin Page: Error fetching products:", error);
     return {
       products: [],
       stats: { total: 0, valid: 0, invalid: 0 },

@@ -1,6 +1,4 @@
-//api/admin/products/route.ts
 export const revalidate = 0;
-
 
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongoDb';
@@ -31,18 +29,12 @@ export async function GET(request: Request) {
   try {
     const client = await clientPromise;
     const db = client.db();
-
-    console.log('🔄 GET /api/admin/products - Fetching products');
     
     const products = await db
       .collection('products')
       .find({})
       .sort({ createdAt: -1 })
       .toArray();
-
-    console.log('🔄 GET /api/admin/products - Raw products from DB:', products.length);
-    
-    // Debug: Log each product's critical fields
     products.forEach((product, index) => {
       console.log(`🔄 Product ${index}:`, {
         _id: product._id?.toString(),
@@ -57,15 +49,6 @@ export async function GET(request: Request) {
     });
 
     const serializedProducts = products.map(product => {
-      // Check for missing required fields
-      if (!product._id || !product.name || product.price === undefined) {
-        console.warn('❌ Invalid product data:', {
-          _id: product._id,
-          name: product.name,
-          price: product.price
-        });
-      }
-
       return {
         _id: product._id?.toString() || `invalid-${Date.now()}`,
         name: product.name || 'Unnamed Product',
@@ -84,12 +67,9 @@ export async function GET(request: Request) {
         updatedAt: product.updatedAt?.toISOString() || new Date().toISOString(),
       };
     });
-
-    console.log('🔄 GET /api/admin/products - Serialized products:', serializedProducts.length);
     
     return NextResponse.json(serializedProducts);
   } catch (error) {
-    console.error('❌ Error fetching products:', error);
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
@@ -200,8 +180,6 @@ export async function POST(request: Request) {
     );
   }
 }
-
-
 
 function validateFile(file: File, expectedType: 'image'): string | null {
   if (expectedType === 'image') {

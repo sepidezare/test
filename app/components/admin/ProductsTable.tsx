@@ -1,4 +1,3 @@
-// components/admin/ProductsTable.tsx
 "use client";
 
 import { useState } from "react";
@@ -16,13 +15,11 @@ export default function ProductsTable({ products }: ProductsTableProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
 
-  // Calculate pagination
   const totalPages = Math.ceil(products.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const currentProducts = products.slice(startIndex, endIndex);
 
-  // Delete product function
   const deleteProduct = async (productId: string, productName: string) => {
     if (
       !confirm(
@@ -47,7 +44,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
       if (!response.ok) {
         throw new Error(data.error || "Failed to delete product");
       }
-      // Refresh the page to show updated list
       router.refresh();
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -59,12 +55,10 @@ export default function ProductsTable({ products }: ProductsTableProps) {
     }
   };
 
-  // Handle page change
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
-  // Handle items per page change
   const handleItemsPerPageChange = (value: number) => {
     setItemsPerPage(value);
     setCurrentPage(1);
@@ -72,7 +66,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
 
   return (
     <div className="bg-white shadow-md rounded-lg overflow-hidden">
-      {/* Table Header with Stats */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
@@ -81,8 +74,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
               {products.length} products
             </p>
           </div>
-
-          {/* Items per page selector */}
           <div className="flex items-center space-x-2">
             <label htmlFor="itemsPerPage" className="text-sm text-gray-600">
               Show:
@@ -102,7 +93,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -124,7 +114,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
                 key={product._id}
                 className="hover:bg-gray-50 transition-colors"
               >
-                {/* Product Info */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-12 w-12">
@@ -147,15 +136,11 @@ export default function ProductsTable({ products }: ProductsTableProps) {
                     </div>
                   </div>
                 </td>
-
-                {/* Price */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-gray-900">
                     ${product.price}
                   </div>
                 </td>
-
-                {/* Actions */}
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex justify-end space-x-2">
                     <Link
@@ -177,8 +162,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
             ))}
           </tbody>
         </table>
-
-        {/* Empty State */}
         {products.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -211,8 +194,6 @@ export default function ProductsTable({ products }: ProductsTableProps) {
           </div>
         )}
       </div>
-
-      {/* Pagination - Same as before */}
       {products.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

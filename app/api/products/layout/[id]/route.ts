@@ -1,9 +1,8 @@
-// app/api/products/layout/[id]/route.ts
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongoDb';
 import { ObjectId } from 'mongodb';
 
-// GET - Fetch product layout
+// GET 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> } // ✅ params is a Promise
@@ -17,13 +16,9 @@ export async function GET(
     const collection = db.collection('products');
 
     let product: any = null;
-
-    // Try with ObjectId if valid
     if (ObjectId.isValid(id)) {
       product = await collection.findOne<{ _id: ObjectId }>({ _id: new ObjectId(id) });
     }
-
-    // If not found, try as string-based _id or slug
     if (!product) {
       product = await collection.findOne({
         $or: [{ _id: id as any }, { slug: id }],
@@ -36,8 +31,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    // Return just the layout
     return NextResponse.json({ 
       success: true, 
       layout: product.layout || {
@@ -57,7 +50,7 @@ export async function GET(
   }
 }
 
-// PATCH - Update product layout
+// PATCH
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> } // ✅ params is a Promise
@@ -80,8 +73,6 @@ export async function PATCH(
     const collection = db.collection('products');
 
     let result: any;
-
-    // Try with ObjectId if valid
     if (ObjectId.isValid(id)) {
       result = await collection.updateOne(
         { _id: new ObjectId(id) },
@@ -93,7 +84,6 @@ export async function PATCH(
         }
       );
     } else {
-      // Try as string-based _id or slug
       result = await collection.updateOne(
         {
           $or: [{ _id: id as any }, { slug: id }],
