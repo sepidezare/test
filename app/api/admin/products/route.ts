@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '../../../../lib/mongoDb';
-import { ObjectId } from 'mongodb';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { Product } from '../../../../types/product';
@@ -166,123 +165,7 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const client = await clientPromise;
-    const db = client.db();
 
-    const { id } = await params;
-    
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
-    }
-
-    const formData = await request.formData();
-
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
-    const price = parseFloat(formData.get('price') as string);
-    const discountPrice = parseFloat(formData.get('discountPrice') as string) || 0;
-
-    const categories = JSON.parse(formData.get('categories') as string || '[]');
-    const brand = formData.get('brand') as string;
-    const colors = JSON.parse(formData.get('colors') as string || '[]');
-    const styles = JSON.parse(formData.get('styles') as string || '[]');
-    const materials = JSON.parse(formData.get('materials') as string || '[]');
-    const sizes = JSON.parse(formData.get('sizes') as string || '[]');
-
-    if (!name || !description || isNaN(price)) {
-      return NextResponse.json(
-        { error: 'Name, description, and price are required' },
-        { status: 400 }
-      );
-    }
-
-    if (!categories || categories.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one category is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!brand) {
-      return NextResponse.json(
-        { error: 'Brand is required' },
-        { status: 400 }
-      );
-    }
-
-    if (discountPrice > price) {
-      return NextResponse.json(
-        { error: 'Discount price cannot be greater than regular price' },
-        { status: 400 }
-      );
-    }
-
-    const existingProduct = await db.collection('products').findOne({
-      _id: new ObjectId(id),
-    });
-
-    if (!existingProduct) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-
-    let mainImageUrl = formData.get('imageUrl') as string;
-    const mainImageFile = formData.get('mainImage') as File;
-
-    if (mainImageFile && mainImageFile.size > 0) {
-      const validationError = validateFile(mainImageFile, 'image');
-      if (validationError) {
-        return NextResponse.json({ error: `Main image: ${validationError}` }, { status: 400 });
-      }
-      mainImageUrl = await saveUploadedFile(mainImageFile);
-    }
-
-    const slug = name !== existingProduct.name ? generateSlug(name) : existingProduct.slug;
-
-    const updateData = {
-      name,
-      description,
-      price,
-      discountPrice,
-      image: mainImageUrl || existingProduct.image,
-      slug,
-      categories,
-      brand,
-      colors,
-      sizes,
-      updatedAt: new Date().toISOString(),
-    };
-
-    const result = await db.collection('products').updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updateData }
-    );
-
-    if (result.matchedCount === 0) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Product updated successfully',
-      product: {
-        _id: id,
-        ...updateData,
-      },
-    });
-  } catch (error) {
-    console.error("Error updating product:", error);
-
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
-  }
-}
 
 function validateFile(file: File, expectedType: 'image'): string | null {
   if (expectedType === 'image') {

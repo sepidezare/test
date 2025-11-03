@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import clientPromise from '../../../../../lib/mongoDb';
+import clientPromise from '@/lib/mongoDb';
 import { ObjectId } from 'mongodb';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { put } from '@vercel/blob';
 
 const UPLOAD_CONFIG = {
   MAX_FILE_SIZE: {
@@ -21,19 +22,20 @@ const UPLOAD_CONFIG = {
   },
 };
 
+// PUT 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> } 
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params; 
-   
+    const client = await clientPromise;
+    const db = client.db();
+
+    const { id } = await params;
+    
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
     }
-
-    const client = await clientPromise;
-    const db = client.db();
 
     const formData = await request.formData();
 
@@ -42,26 +44,10 @@ export async function PUT(
     const price = parseFloat(formData.get('price') as string);
     const discountPrice = parseFloat(formData.get('discountPrice') as string) || 0;
 
+    const categories = JSON.parse(formData.get('categories') as string || '[]');
     const brand = formData.get('brand') as string;
-
-    let categories: string[] = [];
-    let colors: string[] = [];
-    let styles: string[] = [];
-    let materials: string[] = [];
-    let sizes: string[] = [];
-
-    try {
-      categories = JSON.parse(formData.get('categories') as string || '[]');
-      colors = JSON.parse(formData.get('colors') as string || '[]');
-      styles = JSON.parse(formData.get('styles') as string || '[]');
-      materials = JSON.parse(formData.get('materials') as string || '[]');
-      sizes = JSON.parse(formData.get('sizes') as string || '[]');
-    } catch (parseError) {
-      return NextResponse.json(
-        { error: 'Invalid format for array fields' },
-        { status: 400 }
-      );
-    }
+    const colors = JSON.parse(formData.get('colors') as string || '[]');
+    const sizes = JSON.parse(formData.get('sizes') as string || '[]');
 
     if (!name || !description || isNaN(price)) {
       return NextResponse.json(
@@ -99,7 +85,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    let mainImageUrl = existingProduct.image;
+    let mainImageUrl = formData.get('imageUrl') as string;
     const mainImageFile = formData.get('mainImage') as File;
 
     if (mainImageFile && mainImageFile.size > 0) {
@@ -117,13 +103,11 @@ export async function PUT(
       description,
       price,
       discountPrice,
-      image: mainImageUrl,
+      image: mainImageUrl || existingProduct.image,
       slug,
       categories,
       brand,
       colors,
-      styles,
-      materials,
       sizes,
       updatedAt: new Date().toISOString(),
     };
@@ -136,100 +120,42 @@ export async function PUT(
     if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
-    
+
     return NextResponse.json({
       success: true,
       message: 'Product updated successfully',
       product: {
         _id: id,
         ...updateData,
-        createdAt: existingProduct.createdAt,
       },
     });
   } catch (error) {
+    console.error("Error updating product:", error);
+
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
   }
 }
 
-// GET
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    console.log("🔍 GET request for product ID:", id);
-    
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
-    }
-
-    const client = await clientPromise;
-    const db = client.db();
-
-    const product = await db.collection('products').findOne({
-      _id: new ObjectId(id),
-    });
-
-    if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
-
-    const serializedProduct = {
-      _id: product._id.toString(),
-      name: product.name,
-      slug: product.slug || '',
-      description: product.description,
-      price: product.price,
-      discountPrice: product.discountPrice || 0,
-      image: product.image,
-      categories: product.categories || [],
-      brand: product.brand || '',
-      colors: product.colors || [],
-      styles: product.styles || [],
-      materials: product.materials || [],
-      sizes: product.sizes || [],
-      createdAt: product.createdAt.toISOString(),
-      updatedAt: product.updatedAt.toISOString(),
-    };
-
-    return NextResponse.json(serializedProduct);
-  } catch (error) {
-    console.error('Error fetching product:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch product' },
-      { status: 500 }
-    );
-  }
-}
-
-// DELETE
+// DELETE 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const client = await clientPromise;
+    const db = client.db();
+
     const { id } = await params;
-    console.log("🗑️ DELETE request for product ID:", id);
     
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid product ID' }, { status: 400 });
     }
 
-    const client = await clientPromise;
-    const db = client.db();
-    const existingProduct = await db.collection('products').findOne({
-      _id: new ObjectId(id),
-    });
-
-    if (!existingProduct) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-    }
     const result = await db.collection('products').deleteOne({
       _id: new ObjectId(id),
     });
@@ -244,15 +170,13 @@ export async function DELETE(
     });
   } catch (error) {
     console.error("Error deleting product:", error);
-
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Internal server error',
-      },
+      { error: 'Failed to delete product' },
       { status: 500 }
     );
   }
 }
+
 function validateFile(file: File, expectedType: 'image'): string | null {
   if (expectedType === 'image') {
     if (!UPLOAD_CONFIG.ALLOWED_IMAGE_TYPES.includes(file.type)) {
@@ -294,16 +218,36 @@ async function saveUploadedFile(file: File): Promise<string> {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
 
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
+  if (process.env.VERCEL === '1' || process.env.VERCEL_ENV) {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      throw new Error('Vercel Blob: BLOB_READ_WRITE_TOKEN is not set!');
+    }
+
+    const ext = path.extname(file.name);
+    const safeName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9.-]/g, '_');
+    const fileName = `products/${Date.now()}-${safeName}${ext}`;
+
+    const blob = await put(fileName, buffer, {
+      access: 'public',
+      contentType: file.type,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+
+    if (!blob?.url) {
+      throw new Error('Vercel Blob: Failed to upload file');
+    }
+
+    return blob.url;
+  }
+
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads');
   await mkdir(uploadDir, { recursive: true });
-  
   const ext = path.extname(file.name);
   const safeName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9.-]/g, '_');
   const fileName = `${Date.now()}-${safeName}${ext}`;
   const filePath = path.join(uploadDir, fileName);
-  
   await writeFile(filePath, buffer);
-  return `/uploads/products/${fileName}`;
+  return `/uploads/${fileName}`;
 }
 
 function generateSlug(name: string): string {
